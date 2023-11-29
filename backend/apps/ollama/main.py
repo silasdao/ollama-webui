@@ -41,24 +41,17 @@ def proxy(path):
                 if user.role in ["user", "admin"]:
                     if path in ["pull", "delete", "push", "copy", "create"]:
                         # Only admin role can perform actions above
-                        if user.role == "admin":
-                            pass
-                        else:
+                        if user.role != "admin":
                             return (
                                 jsonify({"detail": ERROR_MESSAGES.ACCESS_PROHIBITED}),
                                 401,
                             )
-                    else:
-                        pass
                 else:
                     return jsonify({"detail": ERROR_MESSAGES.ACCESS_PROHIBITED}), 401
             else:
                 return jsonify({"detail": ERROR_MESSAGES.UNAUTHORIZED}), 401
         else:
             return jsonify({"detail": ERROR_MESSAGES.UNAUTHORIZED}), 401
-    else:
-        pass
-
     # Make a request to the target server
     target_response = requests.request(
         method=request.method,
@@ -70,8 +63,7 @@ def proxy(path):
 
     # Proxy the target server's response to the client
     def generate():
-        for chunk in target_response.iter_content(chunk_size=8192):
-            yield chunk
+        yield from target_response.iter_content(chunk_size=8192)
 
     response = Response(generate(), status=target_response.status_code)
 

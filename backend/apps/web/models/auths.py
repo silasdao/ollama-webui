@@ -80,17 +80,12 @@ class AuthsTable:
         user = Users.insert_new_user(id, name, email, role)
 
         print(result, user)
-        if result and user:
-            return user
-        else:
-            return None
+        return user if result and user else None
 
     def authenticate_user(self, email: str, password: str) -> Optional[UserModel]:
         print("authenticate_user")
 
-        auth = self.table.find_one({"email": email, "active": True})
-
-        if auth:
+        if auth := self.table.find_one({"email": email, "active": True}):
             if verify_password(password, auth["password"]):
                 user = self.db.users.find_one({"id": auth["id"]})
                 return UserModel(**user)

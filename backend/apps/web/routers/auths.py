@@ -37,8 +37,7 @@ router = APIRouter()
 @router.get("/", response_model=UserResponse)
 async def get_session_user(cred=Depends(bearer_scheme)):
     token = cred.credentials
-    user = Users.get_user_by_token(token)
-    if user:
+    if user := Users.get_user_by_token(token):
         return {
             "id": user.id,
             "email": user.email,
@@ -60,8 +59,9 @@ async def get_session_user(cred=Depends(bearer_scheme)):
 
 @router.post("/signin", response_model=SigninResponse)
 async def signin(form_data: SigninForm):
-    user = Auths.authenticate_user(form_data.email.lower(), form_data.password)
-    if user:
+    if user := Auths.authenticate_user(
+        form_data.email.lower(), form_data.password
+    ):
         token = create_token(data={"email": user.email})
 
         return {
@@ -84,28 +84,27 @@ async def signin(form_data: SigninForm):
 
 @router.post("/signup", response_model=SigninResponse)
 async def signup(form_data: SignupForm):
-    if not Users.get_user_by_email(form_data.email.lower()):
-        try:
-            role = "admin" if Users.get_num_users() == 0 else "pending"
-            hashed = get_password_hash(form_data.password)
-            user = Auths.insert_new_auth(form_data.email, hashed, form_data.name, role)
-
-            if user:
-                token = create_token(data={"email": user.email})
-                # response.set_cookie(key='token', value=token, httponly=True)
-
-                return {
-                    "token": token,
-                    "token_type": "Bearer",
-                    "id": user.id,
-                    "email": user.email,
-                    "name": user.name,
-                    "role": user.role,
-                    "profile_image_url": user.profile_image_url,
-                }
-            else:
-                raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT(err))
-        except Exception as err:
-            raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT(err))
-    else:
+    if Users.get_user_by_email(form_data.email.lower()):
         raise HTTPException(400, detail=ERROR_MESSAGES.DEFAULT())
+    try:
+        role = "admin" if Users.get_num_users() == 0 else "pending"
+        hashed = get_password_hash(form_data.password)
+        if user := Auths.insert_new_auth(
+            form_data.email, hashed, form_data.name, role
+        ):
+            token = create_token(data={"email": user.email})
+            # response.set_cookie(key='token', value=token, httponly=True)
+
+            return {
+                "token": token,
+                "token_type": "Bearer",
+                "id": user.id,
+                "email": user.email,
+                "name": user.name,
+                "role": user.role,
+                "profile_image_url": user.profile_image_url,
+            }
+        else:
+            raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT(err))
+    except Exception as err:
+        raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT(err))

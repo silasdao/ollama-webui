@@ -35,16 +35,14 @@ def create_token(data: dict, expires_delta: Union[timedelta, None] = None) -> st
 
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
-        payload.update({"exp": expire})
+        payload["exp"] = expire
 
-    encoded_jwt = jwt.encode(payload, JWT_SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return jwt.encode(payload, JWT_SECRET_KEY, algorithm=ALGORITHM)
 
 
 def decode_token(token: str) -> Optional[dict]:
     try:
-        decoded = jwt.decode(token, JWT_SECRET_KEY, options={"verify_signature": False})
-        return decoded
+        return jwt.decode(token, JWT_SECRET_KEY, options={"verify_signature": False})
     except Exception as e:
         return None
 
@@ -55,13 +53,11 @@ def extract_token_from_auth_header(auth_header: str):
 
 def verify_token(request):
     try:
-        bearer = request.headers["authorization"]
-        if bearer:
+        if bearer := request.headers["authorization"]:
             token = bearer[len("Bearer ") :]
-            decoded = jwt.decode(
+            return jwt.decode(
                 token, JWT_SECRET_KEY, options={"verify_signature": False}
             )
-            return decoded
         else:
             return None
     except Exception as e:

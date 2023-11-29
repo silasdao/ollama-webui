@@ -50,17 +50,10 @@ class UsersTable:
                 "created_at": int(time.time()),
             }
         )
-        result = self.table.insert_one(user.model_dump())
-
-        if result:
-            return user
-        else:
-            return None
+        return user if (result := self.table.insert_one(user.model_dump())) else None
 
     def get_user_by_email(self, email: str) -> Optional[UserModel]:
-        user = self.table.find_one({"email": email}, {"_id": False})
-
-        if user:
+        if user := self.table.find_one({"email": email}, {"_id": False}):
             return UserModel(**user)
         else:
             return None
